@@ -1,33 +1,45 @@
-﻿//URL BASE
+// Base URL para la API REST (a traves del proxy reverso Nginx o directo)
 const API_BASE_URL = '/api';
 
-// Elementos DOM
-const tableBody = document.getElementById('marcacionesTableBody');
-const tableCountInfo = document.getElementById('tableCountInfo');
-const filterForm = document.getElementById('filterForm');
-const filterEmpleado = document.getElementById('filterEmpleado');
-const filterFecha = document.getElementById('filterFecha');
-const btnClearFilters = document.getElementById('btnClearFilters');
+// Estado global y cache en memoria
+let marcacionesCache = [];
+let empleadosCache = [];
 
-//DOM METRICS
+// Elementos del DOM - Estadisticas
 const statTotal = document.getElementById('statTotal');
 const statPuntual = document.getElementById('statPuntual');
 const statAtraso = document.getElementById('statAtraso');
 const statIncompleto = document.getElementById('statIncompleto');
-const serverStatusBadge = document.getElementById('serverStatusBadge');
+const tableCountInfo = document.getElementById('tableCountInfo');
 
-//DOM MODAL
+// Elementos del DOM - Filtros y Tabla
+const filterForm = document.getElementById('filterForm');
+const filterEmpleado = document.getElementById('filterEmpleado');
+const filterFecha = document.getElementById('filterFecha');
+const btnClearFilters = document.getElementById('btnClearFilters');
+const tableBody = document.getElementById('marcacionesTableBody');
+
+// Elementos del DOM - Modal Marcacion
 const modal = document.getElementById('marcacionModal');
 const modalTitle = document.getElementById('modalTitle');
 const modalForm = document.getElementById('marcacionForm');
-const btnOpenModal = document.getElementById('btnOpenModal');
+const btnNuevaMarcacion = document.getElementById('btnNuevaMarcacion');
 const btnCloseModal = document.getElementById('btnCloseModal');
 const btnCancelModal = document.getElementById('btnCancelModal');
 
-//FORM INPUTS
+// Campos del formulario Marcacion
 const inputId = document.getElementById('marcacionId');
 const inputCodigo = document.getElementById('codigo_empleado');
 const inputNombre = document.getElementById('nombre_empleado');
+const empleadoSearchInput = document.getElementById('empleadoSearchInput');
+const btnClearCombo = document.getElementById('btnClearCombo');
+const empleadoDropdown = document.getElementById('empleadoDropdown');
+const empleadoOptionsList = document.getElementById('empleadoOptionsList');
+const selectedEmployeePreview = document.getElementById('selectedEmployeePreview');
+const previewEmpCode = document.getElementById('previewEmpCode');
+const previewEmpName = document.getElementById('previewEmpName');
+const linkCrearEmpleadoRapido = document.getElementById('linkCrearEmpleadoRapido');
+
 const inputFecha = document.getElementById('fecha');
 const inputHoraProgIngreso = document.getElementById('hora_ingreso_programada');
 const inputHoraRealIngreso = document.getElementById('hora_ingreso_real');
@@ -35,53 +47,35 @@ const inputHoraProgSalida = document.getElementById('hora_salida_programada');
 const inputHoraRealSalida = document.getElementById('hora_salida_real');
 const inputObservacion = document.getElementById('observacion');
 
-//CACHE DE DATOS
-let marcacionesCache = [];
+// Elementos del DOM - Modal Empleados
+const empleadosModal = document.getElementById('empleadosModal');
+const btnGestionarEmpleados = document.getElementById('btnGestionarEmpleados');
+const btnCloseEmpleadosModal = document.getElementById('btnCloseEmpleadosModal');
+const btnCerrarEmpleadosModal = document.getElementById('btnCerrarEmpleadosModal');
+const nuevoEmpleadoForm = document.getElementById('nuevoEmpleadoForm');
+const newEmpCodigo = document.getElementById('newEmpCodigo');
+const newEmpNombre = document.getElementById('newEmpNombre');
+const newEmpCargo = document.getElementById('newEmpCargo');
+const newEmpDepartamento = document.getElementById('newEmpDepartamento');
+const empleadosTableBody = document.getElementById('empleadosTableBody');
+const empleadosTotalCount = document.getElementById('empleadosTotalCount');
 
-// Inicialización al cargar la página
+// Indicador de estado del servidor
+const statusIndicator = document.getElementById('statusIndicator');
+const statusText = document.getElementById('statusText');
+
+// Inicializacion
 document.addEventListener('DOMContentLoaded', () => {
+    initEvents();
     checkServerHealth();
+    loadEmpleados();
     loadMarcaciones();
-    setupEventListeners();
     setDefaultDate();
 });
 
-// HEALTHCHECK
-async function checkServerHealth() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/health`);
-        if (res.ok) {
-            serverStatusBadge.textContent = 'API Conectada';
-            serverStatusBadge.style.color = '#34d399';
-            serverStatusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-        } else {
-            throw new Error('Server unhealthy');
-        }
-    } catch (err) {
-        serverStatusBadge.textContent = 'API Desconectada';
-        serverStatusBadge.style.color = '#f87171';
-        serverStatusBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-    }
-}
-
-//Default date
-function setDefaultDate() {
-    const today = new Date().toISOString().split('T')[0];
-    inputFecha.value = today;
-}
-
-// EVENT LISTENERS
-function setupEventListeners() {
-    btnOpenModal.addEventListener('click', openCreateModal);
-    btnCloseModal.addEventListener('click', closeModal);
-    btnCancelModal.addEventListener('click', closeModal);
-
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    modalForm.addEventListener('submit', handleFormSubmit);
-
+// Registrar Listeners
+function initEvents() {
+    // Filtros
     filterForm.addEventListener('submit', (e) => {
         e.preventDefault();
         loadMarcaciones();
@@ -92,29 +86,269 @@ function setupEventListeners() {
         filterFecha.value = '';
         loadMarcaciones();
     });
+
+    // Modal Marcacion
+    btnNuevaMarcacion.addEventListener('click', openCreateModal);
+    btnCloseModal.addEventListener('click', closeModal);
+    btnCancelModal.addEventListener('click', closeModal);
+    modalForm.addEventListener('submit', handleFormSubmit);
+
+    // Buscador interactivo de empleados (Combo)
+    empleadoSearchInput.addEventListener('focus', () => renderComboOptions(empleadoSearchInput.value));
+    empleadoSearchInput.addEventListener('input', (e) => {
+        // Si el usuario escribe manualmente, resetear seleccion oculta
+        inputCodigo.value = '';
+        inputNombre.value = '';
+        selectedEmployeePreview.style.display = 'none';
+        btnClearCombo.style.display = e.target.value ? 'block' : 'none';
+        renderComboOptions(e.target.value);
+    });
+
+    btnClearCombo.addEventListener('click', clearComboSelection);
+
+    // Cerrar dropdown si se hace click fuera
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.combo-container')) {
+            empleadoDropdown.classList.remove('active');
+        }
+    });
+
+    // Enlace rapido a nuevo empleado desde el modal de marcacion
+    linkCrearEmpleadoRapido.addEventListener('click', () => {
+        openEmpleadosModal();
+    });
+
+    // Modal Empleados
+    btnGestionarEmpleados.addEventListener('click', openEmpleadosModal);
+    btnCloseEmpleadosModal.addEventListener('click', closeEmpleadosModal);
+    btnCerrarEmpleadosModal.addEventListener('click', closeEmpleadosModal);
+    nuevoEmpleadoForm.addEventListener('submit', handleNuevoEmpleadoSubmit);
+
+    // Cerrar modales con tecla Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeEmpleadosModal();
+        }
+    });
 }
 
-//LOAD MARCS WITH FILTERS
+function setDefaultDate() {
+    const today = new Date().toISOString().split('T')[0];
+    if (inputFecha) inputFecha.value = today;
+}
+
+// VERIFICACION DE ESTADO DEL SERVIDOR (HEALTHCHECK)
+async function checkServerHealth() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/health`);
+        const data = await response.json();
+        if (response.ok && data.status === 'UP') {
+            statusIndicator.className = 'status-indicator online';
+            statusText.textContent = 'API Conectada';
+        } else {
+            statusIndicator.className = 'status-indicator offline';
+            statusText.textContent = 'BD No Conectada';
+        }
+    } catch (err) {
+        statusIndicator.className = 'status-indicator offline';
+        statusText.textContent = 'Servidor Inaccesible';
+    }
+}
+
+//#region Logica de Empleados
+
+async function loadEmpleados() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/empleados`);
+        if (!response.ok) throw new Error('Error al consultar empleados');
+        empleadosCache = await response.json();
+        renderEmpleadosTable(empleadosCache);
+        if (empleadosTotalCount) {
+            empleadosTotalCount.textContent = `${empleadosCache.length} empleado(s) registrado(s)`;
+        }
+    } catch (error) {
+        console.error('Error cargando empleados:', error);
+    }
+}
+
+async function fetchSiguienteCodigoEmpleado() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/empleados/siguiente-codigo`);
+        if (res.ok) {
+            const data = await res.json();
+            if (newEmpCodigo) newEmpCodigo.value = data.siguiente_codigo;
+        }
+    } catch (error) {
+        console.error('Error al obtener siguiente codigo:', error);
+    }
+}
+
+function renderEmpleadosTable(empleados) {
+    if (!empleadosTableBody) return;
+    if (!empleados || empleados.length === 0) {
+        empleadosTableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center loading-row">No hay empleados registrados.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    empleadosTableBody.innerHTML = empleados.map(emp => `
+        <tr>
+            <td><span class="badge-code">${escapeHtml(emp.codigo_empleado)}</span></td>
+            <td><strong>${escapeHtml(emp.nombre_completo)}</strong></td>
+            <td>${emp.cargo ? escapeHtml(emp.cargo) : '<span style="color:#64748b;">-</span>'}</td>
+            <td>${emp.departamento ? escapeHtml(emp.departamento) : '<span style="color:#64748b;">-</span>'}</td>
+            <td><span class="badge-status status-puntual">ACTIVO</span></td>
+        </tr>
+    `).join('');
+}
+
+function openEmpleadosModal() {
+    fetchSiguienteCodigoEmpleado();
+    loadEmpleados();
+    empleadosModal.classList.add('active');
+}
+
+function closeEmpleadosModal() {
+    empleadosModal.classList.remove('active');
+    nuevoEmpleadoForm.reset();
+}
+
+async function handleNuevoEmpleadoSubmit(e) {
+    e.preventDefault();
+    const payload = {
+        nombre_completo: newEmpNombre.value.trim(),
+        cargo: newEmpCargo.value.trim(),
+        departamento: newEmpDepartamento.value.trim()
+    };
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/empleados`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+            throw new Error(result.error || 'Error al registrar empleado');
+        }
+
+        showToast(`Empleado ${result.codigo_empleado} (${result.nombre_completo}) registrado correctamente`, 'success');
+        nuevoEmpleadoForm.reset();
+        await loadEmpleados();
+        await fetchSiguienteCodigoEmpleado();
+
+        // Si el modal de marcacion esta abierto, auto-seleccionar este nuevo empleado
+        if (modal.classList.contains('active')) {
+            selectEmpleado(result.codigo_empleado, result.nombre_completo);
+        }
+    } catch (error) {
+        console.error('Error al guardar empleado:', error);
+        showToast(error.message, 'error');
+    }
+}
+
+//#endregion Logica de Empleados
+
+//#region Combo Buscador de Empleados
+
+function renderComboOptions(queryText = '') {
+    const q = (queryText || '').toLowerCase().trim();
+    const matches = empleadosCache.filter(emp => {
+        if (!q) return true;
+        return emp.codigo_empleado.toLowerCase().includes(q) || 
+               emp.nombre_completo.toLowerCase().includes(q) ||
+               (emp.cargo && emp.cargo.toLowerCase().includes(q));
+    });
+
+    if (matches.length === 0) {
+        empleadoOptionsList.innerHTML = `
+            <div class="combo-no-results">
+                No se encontro ningun empleado con "${escapeHtml(queryText)}".
+                <div style="margin-top:6px;">
+                    <a href="javascript:void(0)" onclick="openEmpleadosModal()" class="link-small">+ Crear "${escapeHtml(queryText)}"</a>
+                </div>
+            </div>
+        `;
+    } else {
+        empleadoOptionsList.innerHTML = matches.map(emp => `
+            <div class="combo-item" data-code="${escapeHtml(emp.codigo_empleado)}" data-name="${escapeHtml(emp.nombre_completo)}">
+                <div class="combo-item-info">
+                    <span class="combo-item-name">${escapeHtml(emp.nombre_completo)}</span>
+                    <span class="combo-item-details">${escapeHtml(emp.cargo || 'Sin cargo')} &bull; ${escapeHtml(emp.departamento || 'General')}</span>
+                </div>
+                <span class="badge-code">${escapeHtml(emp.codigo_empleado)}</span>
+            </div>
+        `).join('');
+
+        // Agregar listeners de seleccion
+        empleadoOptionsList.querySelectorAll('.combo-item').forEach(item => {
+            item.addEventListener('click', () => {
+                selectEmpleado(item.getAttribute('data-code'), item.getAttribute('data-name'));
+            });
+        });
+    }
+
+    empleadoDropdown.classList.add('active');
+}
+
+function selectEmpleado(codigo, nombre) {
+    inputCodigo.value = codigo;
+    inputNombre.value = nombre;
+    empleadoSearchInput.value = `${codigo} - ${nombre}`;
+
+    previewEmpCode.textContent = codigo;
+    previewEmpName.textContent = nombre;
+    selectedEmployeePreview.style.display = 'inline-flex';
+    btnClearCombo.style.display = 'block';
+
+    empleadoDropdown.classList.remove('active');
+}
+
+function clearComboSelection() {
+    inputCodigo.value = '';
+    inputNombre.value = '';
+    empleadoSearchInput.value = '';
+    selectedEmployeePreview.style.display = 'none';
+    btnClearCombo.style.display = 'none';
+    renderComboOptions('');
+    empleadoSearchInput.focus();
+}
+
+//#endregion Combo Buscador de Empleados
+
+//#region Logica de Marcaciones
+
+// CARGAR MARCACIONES (GET)
 async function loadMarcaciones() {
-    tableBody.innerHTML = `<tr><td colspan="8" class="text-center loading-row">Cargando marcaciones desde API REST...</td></tr>`;
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center loading-row">Cargando marcaciones...</td>
+        </tr>
+    `;
 
     try {
         const params = new URLSearchParams();
-        const empleado = filterEmpleado.value.trim();
-        const fecha = filterFecha.value;
+        const empVal = filterEmpleado.value.trim();
+        const dateVal = filterFecha.value;
 
-        if (empleado) params.append('empleado', empleado);
-        if (fecha) params.append('fecha', fecha);
+        if (empVal) params.append('empleado', empVal);
+        if (dateVal) params.append('fecha', dateVal);
 
-        const url = `${API_BASE_URL}/marcaciones${params.toString() ? '?' + params.toString() : ''}`;
+        const url = params.toString() ? `${API_BASE_URL}/marcaciones?${params.toString()}` : `${API_BASE_URL}/marcaciones`;
         const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            throw new Error(`Respuesta no valida del servidor: ${response.status}`);
         }
 
         const data = await response.json();
         marcacionesCache = data;
+
         renderTable(data);
         updateStats(data);
         checkServerHealth();
@@ -122,17 +356,17 @@ async function loadMarcaciones() {
         console.error('Error al cargar marcaciones:', error);
         tableBody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center" style="color: #f87171; padding: 24px;">
-                    ❌ No se pudo conectar con el servidor, vuelva a intentar (${error.message}).
+                <td colspan="8" class="text-center error-row">
+                    No se pudo conectar con el servidor API (${error.message}).
                 </td>
             </tr>
         `;
-        showToast('Error inesperado, vuelva a intentar', 'error');
+        showToast('Error de conexion con la API REST', 'error');
         checkServerHealth();
     }
 }
 
-//RENDER MARCS TABLE
+// RENDERIZAR TABLA DE MARCACIONES CON CODIGO EMPLEADO EN LUGAR DE ID
 function renderTable(marcaciones) {
     if (!marcaciones || marcaciones.length === 0) {
         tableBody.innerHTML = `
@@ -158,10 +392,11 @@ function renderTable(marcaciones) {
 
         return `
             <tr>
-                <td><strong>#${m.id}</strong></td>
                 <td>
-                    <div><strong>${escapeHtml(m.nombre_empleado)}</strong></div>
-                    <small style="color: #94a3b8;">${escapeHtml(m.codigo_empleado)}</small>
+                    <span class="badge-code">${escapeHtml(m.codigo_empleado)}</span>
+                </td>
+                <td>
+                    <span class="table-emp-name">${escapeHtml(m.nombre_empleado)}</span>
                 </td>
                 <td>${fechaFormatted}</td>
                 <td>
@@ -184,8 +419,8 @@ function renderTable(marcaciones) {
                 </td>
                 <td>
                     <div style="display: flex; gap: 6px;">
-                        <button class="btn btn-sm btn-edit" onclick="openEditModal(${m.id})">✏️ Editar</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteMarcacion(${m.id})">🗑️</button>
+                        <button class="btn btn-sm btn-edit" onclick="openEditModal(${m.id})">Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteMarcacion(${m.id})">Eliminar</button>
                     </div>
                 </td>
             </tr>
@@ -193,7 +428,7 @@ function renderTable(marcaciones) {
     }).join('');
 }
 
-//UPDATING METRICS COUNTERS
+// METRICAS
 function updateStats(marcaciones) {
     let total = marcaciones.length;
     let puntual = 0;
@@ -213,11 +448,12 @@ function updateStats(marcaciones) {
     statIncompleto.textContent = incompleto;
 }
 
-//OPEN MODAL IN CREATE MODE
+// ABRIR MODAL CREAR
 function openCreateModal() {
     modalForm.reset();
     inputId.value = '';
-    modalTitle.textContent = 'Registrar Nueva Marcación';
+    clearComboSelection();
+    modalTitle.textContent = 'Registrar Nueva Marcacion';
     setDefaultDate();
     inputHoraProgIngreso.value = '08:00';
     inputHoraRealIngreso.value = '08:00';
@@ -226,14 +462,13 @@ function openCreateModal() {
     modal.classList.add('active');
 }
 
-//OPEN MODAL IN EDIT MODE
+// ABRIR MODAL EDITAR
 function openEditModal(id) {
     const item = marcacionesCache.find(m => m.id === id);
     if (!item) return;
 
     inputId.value = item.id;
-    inputCodigo.value = item.codigo_empleado;
-    inputNombre.value = item.nombre_empleado;
+    selectEmpleado(item.codigo_empleado, item.nombre_empleado);
     inputFecha.value = item.fecha ? item.fecha.split('T')[0] : '';
     inputHoraProgIngreso.value = item.hora_ingreso_programada.substring(0, 5);
     inputHoraRealIngreso.value = item.hora_ingreso_real.substring(0, 5);
@@ -241,26 +476,52 @@ function openEditModal(id) {
     inputHoraRealSalida.value = item.hora_salida_real.substring(0, 5);
     inputObservacion.value = item.observacion || '';
 
-    modalTitle.textContent = `Editar Marcación #${item.id}`;
+    modalTitle.textContent = `Editar Marcacion (Empleado: ${item.codigo_empleado})`;
     modal.classList.add('active');
 }
 
-//CLOSE MODAL
+// CERRAR MODAL
 function closeModal() {
     modal.classList.remove('active');
     modalForm.reset();
+    empleadoDropdown.classList.remove('active');
 }
 
-//FORM SUBMIT (CREATE OR UPDATE)
+// SUBMIT MARCACION
 async function handleFormSubmit(e) {
     e.preventDefault();
 
     const id = inputId.value;
     const isEdit = !!id;
 
+    // Si el usuario escribio directamente en el combo sin hacer clic en una opcion
+    let codigo = inputCodigo.value.trim();
+    let nombre = inputNombre.value.trim();
+
+    if (!codigo || !nombre) {
+        const rawText = empleadoSearchInput.value.trim();
+        // Verificar si coincide con algun empleado existente
+        const matched = empleadosCache.find(emp => 
+            emp.codigo_empleado.toLowerCase() === rawText.toLowerCase() ||
+            emp.nombre_completo.toLowerCase() === rawText.toLowerCase()
+        );
+
+        if (matched) {
+            codigo = matched.codigo_empleado;
+            nombre = matched.nombre_completo;
+        } else if (rawText) {
+            // Asumir que ingreso un nombre y asignar o buscar
+            showToast('Por favor seleccione un empleado valido de la lista o registre uno nuevo', 'error');
+            return;
+        } else {
+            showToast('Debe seleccionar un empleado para la marcacion', 'error');
+            return;
+        }
+    }
+
     const payload = {
-        codigo_empleado: inputCodigo.value.trim(),
-        nombre_empleado: inputNombre.value.trim(),
+        codigo_empleado: codigo,
+        nombre_empleado: nombre,
         fecha: inputFecha.value,
         hora_ingreso_programada: inputHoraProgIngreso.value,
         hora_ingreso_real: inputHoraRealIngreso.value,
@@ -269,7 +530,6 @@ async function handleFormSubmit(e) {
         observacion: inputObservacion.value.trim()
     };
 
-    //VALIDATION CLIENT SIDE
     const [inH, inM] = payload.hora_ingreso_real.split(':').map(Number);
     const [outH, outM] = payload.hora_salida_real.split(':').map(Number);
     if ((outH * 60 + outM) < (inH * 60 + inM)) {
@@ -293,18 +553,20 @@ async function handleFormSubmit(e) {
             throw new Error(result.error || 'Error al procesar la solicitud');
         }
 
-        showToast(isEdit ? 'Marcación actualizada exitosamente' : 'Marcación registrada con éxito', 'success');
+        showToast(isEdit ? 'Marcacion actualizada exitosamente' : 'Marcacion registrada con exito', 'success');
         closeModal();
         loadMarcaciones();
     } catch (error) {
-        console.error('Error al guardar marcación:', error);
+        console.error('Error al guardar marcacion:', error);
         showToast(error.message, 'error');
     }
 }
 
-//DELETE MARK
+// ELIMINAR MARCACION
 async function deleteMarcacion(id) {
-    if (!confirm(`¿Está seguro de que desea eliminar la marcación #${id}?`)) {
+    const item = marcacionesCache.find(m => m.id === id);
+    const empCode = item ? item.codigo_empleado : id;
+    if (!confirm(`Confirma que desea eliminar la marcacion de ${empCode}?`)) {
         return;
     }
 
@@ -316,10 +578,10 @@ async function deleteMarcacion(id) {
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || 'No se pudo eliminar la marcación');
+            throw new Error(result.error || 'No se pudo eliminar la marcacion');
         }
 
-        showToast(`Marcación #${id} eliminada correctamente`, 'success');
+        showToast(`Marcacion eliminada correctamente`, 'success');
         loadMarcaciones();
     } catch (error) {
         console.error('Error al eliminar:', error);
@@ -327,7 +589,9 @@ async function deleteMarcacion(id) {
     }
 }
 
-//FORMAT AND SECURITY HELPERS
+//#endregion Logica de Marcaciones
+
+// UTILIDADES
 function formatTime(timeStr) {
     if (!timeStr) return '--:--';
     return timeStr.substring(0, 5);
@@ -350,9 +614,10 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
-//NOTIFICATIONS TOAST SYSTEM
+// NOTIFICACIONES TOAST
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
