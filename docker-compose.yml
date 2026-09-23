@@ -1,4 +1,4 @@
-﻿services:
+services:
   # Base de Datos PostgreSQL
   database:
     image: postgres:16-alpine
