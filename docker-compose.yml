@@ -1,7 +1,5 @@
 ﻿services:
-  # ========================================================
-  # 1. SERVICIO DE BASE DE DATOS (PostgreSQL)
-  # ========================================================
+  # Base de Datos PostgreSQL
   database:
     image: postgres:16-alpine
     container_name: rrhh_database
@@ -11,13 +9,12 @@
       POSTGRES_USER: ${DB_USER:-rrhh_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-rrhh_secure_password_2026}
     volumes:
-      # Volumen persistente para los datos de la base de datos
+      # Volumen persistente
       - postgres_data:/var/lib/postgresql/data
-      # Script SQL de inicialización automática al arrancar por primera vez
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - rrhh-network
-    # Comprobación de estado (Healthcheck) requerida por el examen
+    #Comprobar si esta correctamente levantado
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-rrhh_user} -d ${DB_NAME:-rrhh}"]
       interval: 5s
@@ -25,9 +22,7 @@
       retries: 5
       start_period: 10s
 
-  # ========================================================
-  # 2. SERVICIO API REST (Backend Node.js + Express)
-  # ========================================================
+  # Api Rest NodeJs Express
   api:
     build:
       context: ./api
@@ -42,18 +37,14 @@
       DB_USER: ${DB_USER:-rrhh_user}
       DB_PASSWORD: ${DB_PASSWORD:-rrhh_secure_password_2026}
     ports:
-      # Expone el puerto para pruebas directas vía curl / Postman
       - "${API_PORT:-3000}:3000"
     networks:
       - rrhh-network
-    # Garantiza que la API no intente operar antes de que la BD esté disponible y saludable
     depends_on:
       database:
         condition: service_healthy
 
-  # ========================================================
-  # 3. SERVICIO WEB FRONTEND (Nginx + HTML/CSS/JS)
-  # ========================================================
+  # Web Frontend Nginx HTML CSS JS
   web:
     build:
       context: ./web
@@ -61,23 +52,19 @@
     container_name: rrhh_web
     restart: unless-stopped
     ports:
-      # Acceso web para Recursos Humanos en el navegador
       - "${WEB_PORT:-8080}:80"
     networks:
       - rrhh-network
     depends_on:
       - api
 
-# ========================================================
-# RED PRIVADA PERSONALIZADA DE DOCKER (Bridge)
-# ========================================================
+# Red Privada
 networks:
   rrhh-network:
     driver: bridge
 
-# ========================================================
-# VOLUMEN PERSISTENTE
-# ========================================================
+
+# Volumen persistente
 volumes:
   postgres_data:
     driver: local
