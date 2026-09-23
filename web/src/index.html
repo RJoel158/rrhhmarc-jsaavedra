@@ -1,47 +1,59 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Marcaciones RRHH - Univalle</title>
+    <title>Sistema de Gestion de Marcaciones RRHH</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
         <!-- Barra de Navegacion Superior -->
         <header class="navbar">
-            <div class="nav-brand">
+            <div class="brand">
                 <div class="brand-icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                 </div>
-                <div class="brand-text">
-                    <h1>RRHH Marcaciones</h1>
-                    <span class="sub-text">Gestion de Asistencia de Personal - Cloud Computing</span>
+                <div>
+                    <h1>Control de Marcaciones RRHH</h1>
+                    <p class="subtitle">Cloud Computing - Despliegue Multicontenedor Docker</p>
                 </div>
             </div>
             <div class="nav-actions">
-                <span class="badge-server" id="serverStatusBadge">API Conectada</span>
-                <button class="btn btn-primary" id="btnOpenModal">
-                    <span class="btn-icon">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </span> 
+                <div class="server-status" id="serverStatus">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Conectando...</span>
+                </div>
+                <button class="btn btn-secondary" id="btnGestionarEmpleados">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Empleados
+                </button>
+                <button class="btn btn-primary" id="btnNuevaMarcacion">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
                     Nueva Marcacion
                 </button>
             </div>
         </header>
 
-        <!-- Tarjetas de Resumen / Metricas -->
+        <!-- Tarjetas de Estadisticas Rapidas -->
         <section class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon icon-total">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
                         <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                     </svg>
@@ -120,8 +132,8 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Empleado</th>
+                            <th>Codigo Empleado</th>
+                            <th>Nombre del Empleado</th>
                             <th>Fecha</th>
                             <th>Ingreso (Prog / Real)</th>
                             <th>Salida (Prog / Real)</th>
@@ -149,15 +161,27 @@
             </div>
             <form id="marcacionForm" class="modal-form">
                 <input type="hidden" id="marcacionId">
+                <input type="hidden" id="codigo_empleado">
+                <input type="hidden" id="nombre_empleado">
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="codigo_empleado">Codigo Empleado *</label>
-                        <input type="text" id="codigo_empleado" required placeholder="Ej: EMP001">
+                <!-- Combo Buscador de Empleado -->
+                <div class="form-group combo-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="empleadoSearchInput">Seleccionar Empleado *</label>
+                        <a href="javascript:void(0)" id="linkCrearEmpleadoRapido" class="link-small">+ Nuevo Empleado</a>
                     </div>
-                    <div class="form-group">
-                        <label for="nombre_empleado">Nombre Completo *</label>
-                        <input type="text" id="nombre_empleado" required placeholder="Ej: Ana Perez">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="empleadoSearchInput" autocomplete="off" placeholder="Buscar por nombre o codigo (ej: Ana Perez o EMP001)..." required>
+                        <button type="button" class="btn-clear-combo" id="btnClearCombo" title="Limpiar seleccion">&times;</button>
+                    </div>
+                    <div class="combo-dropdown" id="empleadoDropdown">
+                        <div class="combo-dropdown-inner" id="empleadoOptionsList">
+                            <!-- Opciones cargadas dinamicamente -->
+                        </div>
+                    </div>
+                    <div class="selected-employee-preview" id="selectedEmployeePreview" style="display: none;">
+                        <span class="badge-code" id="previewEmpCode">EMP001</span>
+                        <span class="preview-name" id="previewEmpName">Ana Perez</span>
                     </div>
                 </div>
 
@@ -193,15 +217,79 @@
                     <textarea id="observacion" rows="2" placeholder="Comentario o justificacion de asistencia"></textarea>
                 </div>
 
-                <!-- <div class="notice-box">
-                    <strong>Determinacion automatica:</strong> El estado (<code>PUNTUAL</code> o <code>ATRASO</code>) se calcula automaticamente en el servidor segun la hora real vs. programada.
-                </div> -->
-
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancelar</button>
                     <button type="submit" class="btn btn-primary" id="btnSaveMarcacion">Guardar Marcacion</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal para Gestion de Empleados -->
+    <div class="modal-overlay" id="empleadosModal">
+        <div class="modal-card modal-large">
+            <div class="modal-header">
+                <h3>Gestion de Empleados</h3>
+                <button class="modal-close" id="btnCloseEmpleadosModal">&times;</button>
+            </div>
+            
+            <div class="employees-modal-body">
+                <!-- Formulario de Alta de Empleado -->
+                <div class="employee-create-box">
+                    <h4 style="margin-bottom: 12px; font-size: 0.95rem; color: #cbd5e1;">Registrar Nuevo Empleado</h4>
+                    <form id="nuevoEmpleadoForm" class="employee-form-grid">
+                        <div class="form-group">
+                            <label for="newEmpCodigo">Codigo Asignado</label>
+                            <input type="text" id="newEmpCodigo" readonly class="input-readonly" value="EMP00X">
+                        </div>
+                        <div class="form-group" style="flex: 2; min-width: 220px;">
+                            <label for="newEmpNombre">Nombre Completo *</label>
+                            <input type="text" id="newEmpNombre" required placeholder="Ej: Roberto Gomez">
+                        </div>
+                        <div class="form-group">
+                            <label for="newEmpCargo">Cargo</label>
+                            <input type="text" id="newEmpCargo" placeholder="Ej: Especialista RRHH">
+                        </div>
+                        <div class="form-group">
+                            <label for="newEmpDepartamento">Departamento</label>
+                            <input type="text" id="newEmpDepartamento" placeholder="Ej: Administracion">
+                        </div>
+                        <div class="form-group" style="justify-content: flex-end; align-self: flex-end;">
+                            <button type="submit" class="btn btn-primary" style="height: 40px;">Guardar Empleado</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tabla de Empleados Registrados -->
+                <div class="employees-list-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="font-size: 0.95rem; color: #cbd5e1;">Personal Registrado en el Sistema</h4>
+                        <span id="empleadosTotalCount" style="font-size: 0.8rem; color: #94a3b8;">0 empleados</span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 240px; overflow-y: auto;">
+                        <table class="data-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>Codigo</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Cargo</th>
+                                    <th>Departamento</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="empleadosTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center loading-row">Cargando empleados...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 16px;">
+                <button type="button" class="btn btn-secondary" id="btnCerrarEmpleadosModal">Cerrar</button>
+            </div>
         </div>
     </div>
 
