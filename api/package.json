@@ -1,7 +1,7 @@
 ﻿{
-  "name": "rrhh-marcaciones-api",
+  "name": "rrhh-marcaciones-api-jsaavedra",
   "version": "1.0.0",
-  "description": "API REST para gestión de marcaciones de personal - Cloud Computing Univalle",
+  "description": "API REST para gestión de marcaciones de personal examen de Tecnolgias emergentes",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

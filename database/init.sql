@@ -1,6 +1,4 @@
-﻿-- Script de Inicialización de Base de Datos para el Sistema de Marcaciones de RRHH
--- Universidad del Valle - Examen Práctico Cloud Computing
-
+﻿--tables
 CREATE TABLE IF NOT EXISTS marcaciones (
     id SERIAL PRIMARY KEY,
     codigo_empleado VARCHAR(50) NOT NULL,
@@ -15,11 +13,11 @@ CREATE TABLE IF NOT EXISTS marcaciones (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices para optimizar las consultas por empleado y fecha
+--index
 CREATE INDEX IF NOT EXISTS idx_marcaciones_empleado ON marcaciones(codigo_empleado);
 CREATE INDEX IF NOT EXISTS idx_marcaciones_fecha ON marcaciones(fecha);
 
--- Registros de demostración iniciales
+--test insert 
 INSERT INTO marcaciones (
     codigo_empleado, nombre_empleado, fecha, 
     hora_ingreso_programada, hora_ingreso_real, 
