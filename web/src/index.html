@@ -9,48 +9,80 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Barra de Navegación Superior -->
+        <!-- Barra de Navegacion Superior -->
         <header class="navbar">
             <div class="nav-brand">
-                <div class="brand-icon"></div>
+                <div class="brand-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
                 <div class="brand-text">
                     <h1>RRHH Marcaciones</h1>
-                    <span class="sub-text">Gestión de Asistencia de Personal • Cloud Computing</span>
+                    <span class="sub-text">Gestion de Asistencia de Personal - Cloud Computing</span>
                 </div>
             </div>
             <div class="nav-actions">
                 <span class="badge-server" id="serverStatusBadge">API Conectada</span>
                 <button class="btn btn-primary" id="btnOpenModal">
-                    <span class="btn-icon"></span> Nueva Marcación
+                    <span class="btn-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </span> 
+                    Nueva Marcacion
                 </button>
             </div>
         </header>
 
-        <!-- Tarjetas de Resumen / Métricas -->
+        <!-- Tarjetas de Resumen / Metricas -->
         <section class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon icon-total"></div>
+                <div class="stat-icon icon-total">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                </div>
                 <div class="stat-info">
                     <span class="stat-label">Total Marcaciones</span>
                     <h2 class="stat-value" id="statTotal">0</h2>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon icon-puntual"></div>
+                <div class="stat-icon icon-puntual">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
                 <div class="stat-info">
                     <span class="stat-label">Puntuales</span>
                     <h2 class="stat-value" id="statPuntual">0</h2>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon icon-atraso"></div>
+                <div class="stat-icon icon-atraso">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
                 <div class="stat-info">
                     <span class="stat-label">Atrasos</span>
                     <h2 class="stat-value" id="statAtraso">0</h2>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon icon-incompleto"></div>
+                <div class="stat-icon icon-incompleto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
                 <div class="stat-info">
                     <span class="stat-label">Incompletos / Otros</span>
                     <h2 class="stat-value" id="statIncompleto">0</h2>
@@ -63,8 +95,8 @@
             <div class="filter-title">Filtrar Marcaciones</div>
             <form id="filterForm" class="filter-form">
                 <div class="form-group">
-                    <label for="filterEmpleado">Empleado (Código o Nombre)</label>
-                    <input type="text" id="filterEmpleado" placeholder="Ej: EMP001 o Ana Pérez">
+                    <label for="filterEmpleado">Empleado</label>
+                    <input type="text" id="filterEmpleado" placeholder="Ej: EMP001 o Ana Perez">
                 </div>
                 <div class="form-group">
                     <label for="filterFecha">Fecha</label>
@@ -94,7 +126,7 @@
                             <th>Ingreso (Prog / Real)</th>
                             <th>Salida (Prog / Real)</th>
                             <th>Estado</th>
-                            <th>Observación</th>
+                            <th>Observacion</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -108,11 +140,11 @@
         </section>
     </div>
 
-    <!-- Modal para Crear / Editar Marcación -->
+    <!-- Modal para Crear / Editar Marcacion -->
     <div class="modal-overlay" id="marcacionModal">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modalTitle">Registrar Nueva Marcación</h3>
+                <h3 id="modalTitle">Registrar Nueva Marcacion</h3>
                 <button class="modal-close" id="btnCloseModal">&times;</button>
             </div>
             <form id="marcacionForm" class="modal-form">
@@ -120,12 +152,12 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="codigo_empleado">Código Empleado *</label>
+                        <label for="codigo_empleado">Codigo Empleado *</label>
                         <input type="text" id="codigo_empleado" required placeholder="Ej: EMP001">
                     </div>
                     <div class="form-group">
                         <label for="nombre_empleado">Nombre Completo *</label>
-                        <input type="text" id="nombre_empleado" required placeholder="Ej: Ana Pérez">
+                        <input type="text" id="nombre_empleado" required placeholder="Ej: Ana Perez">
                     </div>
                 </div>
 
@@ -157,17 +189,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="observacion">Observación (Opcional)</label>
-                    <textarea id="observacion" rows="2" placeholder="Comentario o justificación de asistencia"></textarea>
+                    <label for="observacion">Observacion (Opcional)</label>
+                    <textarea id="observacion" rows="2" placeholder="Comentario o justificacion de asistencia"></textarea>
                 </div>
 
-                <div class="notice-box">
-                    <strong>Determinación automática:</strong> El estado (<code>PUNTUAL</code> o <code>ATRASO</code>) se calcula automáticamente en el servidor según la hora real vs. programada.
-                </div>
+                <!-- <div class="notice-box">
+                    <strong>Determinacion automatica:</strong> El estado (<code>PUNTUAL</code> o <code>ATRASO</code>) se calcula automaticamente en el servidor segun la hora real vs. programada.
+                </div> -->
 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="btnSaveMarcacion">Guardar Marcación</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveMarcacion">Guardar Marcacion</button>
                 </div>
             </form>
         </div>

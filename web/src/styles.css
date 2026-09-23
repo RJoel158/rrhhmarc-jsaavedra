@@ -1,4 +1,5 @@
 ﻿:root {
+    color-scheme: dark;
     --bg-main: #0f172a;
     --bg-card: #1e293b;
     --bg-hover: #334155;
@@ -63,9 +64,11 @@ body {
 }
 
 .brand-icon {
-    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: rgba(59, 130, 246, 0.12);
-    padding: 8px 12px;
+    padding: 8px 10px;
     border-radius: var(--radius-md);
 }
 
@@ -115,8 +118,10 @@ body {
 }
 
 .stat-icon {
-    font-size: 1.8rem;
-    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
     border-radius: var(--radius-md);
     background: rgba(255, 255, 255, 0.04);
 }
@@ -188,6 +193,21 @@ body {
     font-size: 0.9rem;
     outline: none;
     transition: border-color 0.2s;
+    color-scheme: dark;
+}
+
+/* Iconos de calendario y reloj nativos en blanco brillante */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1) !important;
+    cursor: pointer;
+    opacity: 0.95;
+    transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
 }
 
 .form-group input:focus, 
