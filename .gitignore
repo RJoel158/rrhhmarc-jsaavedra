@@ -9,6 +9,7 @@ npm-debug.log
 *.log
 .DS_Store
 Thumbs.db
+GUIA_PASO_A_PASO.md
 
 # Docker
 .docker/
