@@ -6,12 +6,10 @@ require('dotenv').config();
 const app = express();
 const port = process.env.API_PORT || 3000;
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Configuración de conexión a PostgreSQL
-// Utiliza siempre el host definido en variables de entorno (por defecto 'database', NO 'localhost')
+
 const pool = new Pool({
     host: process.env.DB_HOST || 'database',
     port: parseInt(process.env.DB_PORT, 10) || 5432,
@@ -23,10 +21,7 @@ const pool = new Pool({
     connectionTimeoutMillis: 5000,
 });
 
-// Función de determinación automática de estado en la capa de Backend
-// Requerimiento de lógica de negocio del examen:
-// hora_ingreso_real <= hora_ingreso_programada -> PUNTUAL
-// hora_ingreso_real > hora_ingreso_programada  -> ATRASO
+
 function calcularEstado(horaProgIngreso, horaRealIngreso, horaProgSalida, horaRealSalida) {
     if (!horaRealIngreso || !horaProgIngreso) {
         return 'INCOMPLETO';
@@ -45,14 +40,14 @@ function calcularEstado(horaProgIngreso, horaRealIngreso, horaProgSalida, horaRe
     }
 }
 
-// Validador de formato de hora (HH:mm o HH:mm:ss)
+
 function esHoraValida(horaStr) {
     if (!horaStr || typeof horaStr !== 'string') return false;
     const regex = /^([01]\d|2[0-3]):([0-5]\d)(:([0-5]\d))?$/;
     return regex.test(horaStr.trim());
 }
 
-// Validador de formato de fecha (YYYY-MM-DD)
+
 function esFechaValida(fechaStr) {
     if (!fechaStr || typeof fechaStr !== 'string') return false;
     const regex = /^\d{4}-\d{2}-\d{2}$/;
@@ -61,17 +56,13 @@ function esFechaValida(fechaStr) {
     return d instanceof Date && !isNaN(d.getTime());
 }
 
-// Convertidor de hora a minutos para comparar
 function horaAMinutos(horaStr) {
     const [h, m] = horaStr.split(':').map(Number);
     return h * 60 + m;
 }
 
-// ----------------------------------------------------
-// RUTAS DE LA API REST
-// ----------------------------------------------------
+//#region Rutas
 
-// 1. Healthcheck del servicio y la base de datos
 app.get('/api/health', async (req, res) => {
     try {
         const dbRes = await pool.query('SELECT NOW() as db_time');
@@ -332,6 +323,8 @@ app.delete('/api/marcaciones/:id', async (req, res) => {
         return res.status(500).json({ error: 'Error interno al eliminar la marcación' });
     }
 });
+
+//#endregion Rutas
 
 // Iniciar servidor con comprobación de conexión a PostgreSQL
 app.listen(port, () => {

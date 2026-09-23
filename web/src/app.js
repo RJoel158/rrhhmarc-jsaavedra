@@ -1,5 +1,4 @@
-﻿// URL base de la API REST
-// Al servirse a través de Nginx, /api se redirige internamente al contenedor api:3000
+﻿//URL BASE
 const API_BASE_URL = '/api';
 
 // Elementos DOM
@@ -10,14 +9,14 @@ const filterEmpleado = document.getElementById('filterEmpleado');
 const filterFecha = document.getElementById('filterFecha');
 const btnClearFilters = document.getElementById('btnClearFilters');
 
-// Métricas DOM
+//DOM METRICS
 const statTotal = document.getElementById('statTotal');
 const statPuntual = document.getElementById('statPuntual');
 const statAtraso = document.getElementById('statAtraso');
 const statIncompleto = document.getElementById('statIncompleto');
 const serverStatusBadge = document.getElementById('serverStatusBadge');
 
-// Modal DOM
+//DOM MODAL
 const modal = document.getElementById('marcacionModal');
 const modalTitle = document.getElementById('modalTitle');
 const modalForm = document.getElementById('marcacionForm');
@@ -25,7 +24,7 @@ const btnOpenModal = document.getElementById('btnOpenModal');
 const btnCloseModal = document.getElementById('btnCloseModal');
 const btnCancelModal = document.getElementById('btnCancelModal');
 
-// Form Inputs
+//FORM INPUTS
 const inputId = document.getElementById('marcacionId');
 const inputCodigo = document.getElementById('codigo_empleado');
 const inputNombre = document.getElementById('nombre_empleado');
@@ -36,7 +35,7 @@ const inputHoraProgSalida = document.getElementById('hora_salida_programada');
 const inputHoraRealSalida = document.getElementById('hora_salida_real');
 const inputObservacion = document.getElementById('observacion');
 
-// Cache local de marcaciones
+//CACHE DE DATOS
 let marcacionesCache = [];
 
 // Inicialización al cargar la página
@@ -47,31 +46,31 @@ document.addEventListener('DOMContentLoaded', () => {
     setDefaultDate();
 });
 
-// Comprobar estado de salud del backend
+// HEALTHCHECK
 async function checkServerHealth() {
     try {
         const res = await fetch(`${API_BASE_URL}/health`);
         if (res.ok) {
-            serverStatusBadge.textContent = '🟢 API Conectada';
+            serverStatusBadge.textContent = 'API Conectada';
             serverStatusBadge.style.color = '#34d399';
             serverStatusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
         } else {
             throw new Error('Server unhealthy');
         }
     } catch (err) {
-        serverStatusBadge.textContent = '🔴 API Desconectada';
+        serverStatusBadge.textContent = 'API Desconectada';
         serverStatusBadge.style.color = '#f87171';
         serverStatusBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
     }
 }
 
-// Configurar fecha de hoy por defecto en el selector
+//Default date
 function setDefaultDate() {
     const today = new Date().toISOString().split('T')[0];
     inputFecha.value = today;
 }
 
-// Escuchadores de eventos
+// EVENT LISTENERS
 function setupEventListeners() {
     btnOpenModal.addEventListener('click', openCreateModal);
     btnCloseModal.addEventListener('click', closeModal);
@@ -95,7 +94,7 @@ function setupEventListeners() {
     });
 }
 
-// Cargar marcaciones desde la API con filtros opcionales
+//LOAD MARCS WITH FILTERS
 async function loadMarcaciones() {
     tableBody.innerHTML = `<tr><td colspan="8" class="text-center loading-row">Cargando marcaciones desde API REST...</td></tr>`;
 
@@ -124,17 +123,16 @@ async function loadMarcaciones() {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="8" class="text-center" style="color: #f87171; padding: 24px;">
-                    ❌ No se pudo conectar con el API REST (${error.message}).<br>
-                    Verifique que el contenedor <code>api</code> esté ejecutándose en Docker.
+                    ❌ No se pudo conectar con el servidor, vuelva a intentar (${error.message}).
                 </td>
             </tr>
         `;
-        showToast('Error al conectar con la API REST', 'error');
+        showToast('Error inesperado, vuelva a intentar', 'error');
         checkServerHealth();
     }
 }
 
-// Renderizar tabla de marcaciones
+//RENDER MARCS TABLE
 function renderTable(marcaciones) {
     if (!marcaciones || marcaciones.length === 0) {
         tableBody.innerHTML = `
@@ -195,7 +193,7 @@ function renderTable(marcaciones) {
     }).join('');
 }
 
-// Actualizar contadores métricos superiores
+//UPDATING METRICS COUNTERS
 function updateStats(marcaciones) {
     let total = marcaciones.length;
     let puntual = 0;
@@ -215,7 +213,7 @@ function updateStats(marcaciones) {
     statIncompleto.textContent = incompleto;
 }
 
-// Abrir modal en modo creación
+//OPEN MODAL IN CREATE MODE
 function openCreateModal() {
     modalForm.reset();
     inputId.value = '';
@@ -228,7 +226,7 @@ function openCreateModal() {
     modal.classList.add('active');
 }
 
-// Abrir modal en modo edición
+//OPEN MODAL IN EDIT MODE
 function openEditModal(id) {
     const item = marcacionesCache.find(m => m.id === id);
     if (!item) return;
@@ -247,13 +245,13 @@ function openEditModal(id) {
     modal.classList.add('active');
 }
 
-// Cerrar modal
+//CLOSE MODAL
 function closeModal() {
     modal.classList.remove('active');
     modalForm.reset();
 }
 
-// Enviar formulario (Crear o Actualizar)
+//FORM SUBMIT (CREATE OR UPDATE)
 async function handleFormSubmit(e) {
     e.preventDefault();
 
@@ -271,7 +269,7 @@ async function handleFormSubmit(e) {
         observacion: inputObservacion.value.trim()
     };
 
-    // Validación en cliente: salida >= ingreso
+    //VALIDATION CLIENT SIDE
     const [inH, inM] = payload.hora_ingreso_real.split(':').map(Number);
     const [outH, outM] = payload.hora_salida_real.split(':').map(Number);
     if ((outH * 60 + outM) < (inH * 60 + inM)) {
@@ -304,7 +302,7 @@ async function handleFormSubmit(e) {
     }
 }
 
-// Eliminar marcación
+//DELETE MARK
 async function deleteMarcacion(id) {
     if (!confirm(`¿Está seguro de que desea eliminar la marcación #${id}?`)) {
         return;
@@ -329,7 +327,7 @@ async function deleteMarcacion(id) {
     }
 }
 
-// Helpers de formato y seguridad
+//FORMAT AND SECURITY HELPERS
 function formatTime(timeStr) {
     if (!timeStr) return '--:--';
     return timeStr.substring(0, 5);
@@ -352,7 +350,7 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
-// Sistema de Notificaciones Toast
+//NOTIFICATIONS TOAST SYSTEM
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
